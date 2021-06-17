@@ -21,23 +21,24 @@ import com.vladislav.magentatest.R
 import com.vladislav.magentatest.data.Photo
 import com.vladislav.magentatest.network.ApiInterface
 import com.vladislav.magentatest.viewmodels.PhotoList
+import java.io.File
 
-class ImageListRecyclerAdapter(
+class ImagesListRecyclerAdapter(
     private var items: PhotoList,
-    private val screenWidth: Int,
     private val onClickFun: (Photo, Drawable) -> Unit
-) : RecyclerView.Adapter<ImageListRecyclerAdapter.ImageViewHolder>() {
+) : RecyclerView.Adapter<ImagesListRecyclerAdapter.ImageViewHolder>() {
 
-    inner class ImageViewHolder(v: View) : RecyclerView.ViewHolder(v), View.OnClickListener, View.OnLongClickListener {
+    inner class ImageViewHolder(v: View) : RecyclerView.ViewHolder(v), View.OnClickListener {
+
         val imageView: ImageView = v.findViewById(R.id.image_view)
         val card: CardView = v.findViewById(R.id.card)
         val likeButton: ImageButton = v.findViewById(R.id.like_button)
         private val imageLayout: ConstraintLayout = v.findViewById(R.id.image_layout)
+
         var itemPosition: Int = 0
 
         init {
             v.setOnClickListener(this)
-            v.setOnLongClickListener(this)
             imageLayout.layoutTransition.apply {
                 setAnimateParentHierarchy(false)
                 enableTransitionType(LayoutTransition.CHANGING)
@@ -48,10 +49,6 @@ class ImageListRecyclerAdapter(
             items[itemPosition].liked = !items[itemPosition].liked
             likeButton.visibility = changeLikeVisibility(itemPosition)
             onClickFun(items[itemPosition], imageView.drawable)
-        }
-
-        override fun onLongClick(v: View?): Boolean {
-            TODO("Not yet implemented")
         }
     }
 
@@ -80,7 +77,6 @@ class ImageListRecyclerAdapter(
                 holder.likeButton.visibility = changeLikeVisibility(position)
             }
         }
-        Log.d("Holder w:", holder.card.width.toString())
     }
 
     override fun getItemCount(): Int = items.size

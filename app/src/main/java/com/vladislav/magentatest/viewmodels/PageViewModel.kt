@@ -45,7 +45,7 @@ class PageViewModel : ViewModel() {
     } as MutableLiveData
     public val pictures = _pictures as LiveData<PhotoList>
 
-    private val _likedPictures = liveData(Dispatchers.IO){
+    private val _likedPictures = liveData(Dispatchers.IO) {
         emit(database.photoDao().selectAllIds())
     } as MutableLiveData
     public val likedPictures = _likedPictures as LiveData<List<Int>>
@@ -59,35 +59,55 @@ class PageViewModel : ViewModel() {
         }
     }
 
-    fun writeImage(bmp: Bitmap, id: Int, dir: File) = viewModelScope.launch(Dispatchers.IO) {
+    private fun writeImage(bmp: Bitmap, id: Int, dir: File) {
         val imgFile = File(dir, "$id${MainActivity.JPG}")
-        with(FileOutputStream(imgFile)){
+        with(FileOutputStream(imgFile)) {
             bmp.compress(Bitmap.CompressFormat.JPEG, 100, this)
             Log.d(TAG, "image written")
+            this.close()
         }
     }
 
-    fun deleteFile(file: File, context: Context) {
+    private fun deleteFile(file: File, context: Context) {
+        file.delete()
+        if (file.exists()) {
+            context.deleteFile(file.name)
+        }
+        Log.d(TAG, "file deleted")
+    }
+
+    private fun insertIntoDB(photo: Photo) {
+        database.photoDao().insert(PhotoEntity(photo.id, photo.width, photo.height))
+        Log.d(TAG, "image info inserted")
+    }
+
+    private fun deleteFromDB(id: Int) {
+        database.photoDao().deleteById(id)
+        Log.d(TAG, "image info deleted")
+    }
+
+    fun likeImage(bmp: Bitmap, photo: Photo, dir: File) {
         viewModelScope.launch(Dispatchers.IO) {
-            file.delete()
-            if(file.exists()){
-               context.deleteFile(file.name)
+            writeImage(bmp, photo.id, dir)
+            insertIntoDB(photo)
+            withContext(Dispatchers.Main) {
+                _likedPictures.value = _likedPictures.value!! + photo.id
             }
-            Log.d(TAG, "file deleted")
+            Log.d(TAG, _likedPictures.value!!.joinToString())
         }
     }
 
-    fun insertIntoDB(photo: Photo) {
+    fun removeLike(id: Int, file: File, context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
-            database.photoDao().insert(PhotoEntity(photo.id, photo.width, photo.height))
-            Log.d(TAG, "image info inserted")
-        }
-    }
-
-    fun deleteFromDB(id: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            database.photoDao().deleteById(id)
-            Log.d(TAG, "image info deleted")
+            deleteFromDB(id)
+            deleteFile(file, context)
+            _pictures.value!!.find { it.id == id }.apply {
+                this?.liked = false
+            }
+            withContext(Dispatchers.Main) {
+                _likedPictures.value = _likedPictures.value!!.filter { it != id }
+            }
+            Log.d(TAG, _likedPictures.value!!.joinToString())
         }
     }
 }

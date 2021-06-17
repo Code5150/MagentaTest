@@ -1,6 +1,5 @@
 package com.vladislav.magentatest.ui.fragments
 
-import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
@@ -9,36 +8,25 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
-import com.vladislav.magentatest.adapters.ImageListRecyclerAdapter
+import androidx.fragment.app.activityViewModels
+import com.vladislav.magentatest.Helpers
+import com.vladislav.magentatest.adapters.ImagesListRecyclerAdapter
 import com.vladislav.magentatest.data.Photo
+import com.vladislav.magentatest.databinding.FragmentFavouritesBinding
 import com.vladislav.magentatest.databinding.FragmentMainBinding
 import com.vladislav.magentatest.ui.main.MainActivity.Companion.JPG
 import com.vladislav.magentatest.viewmodels.PageViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 
 /**
  * A placeholder fragment containing a simple view.
  */
 class PlaceholderFragment : Fragment() {
 
-    private val pageViewModel: PageViewModel by viewModels()
+    private val pageViewModel: PageViewModel by activityViewModels()
+
     private var _binding: FragmentMainBinding? = null
-
-    // This property is only valid between onCreateView and
-    // onDestroyView.
     private val binding get() = _binding!!
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        /*pageViewModel = ViewModelProvider(this).get(PageViewModel::class.java).apply {
-            setIndex(arguments?.getInt(ARG_SECTION_NUMBER) ?: 1)
-        }*/
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -48,26 +36,24 @@ class PlaceholderFragment : Fragment() {
         _binding = FragmentMainBinding.inflate(inflater, container, false)
         val root = binding.root
 
-        /*val textView: TextView = binding.sectionLabel
-        pageViewModel.text.observe(viewLifecycleOwner, Observer {
-            textView.text = it
-        })*/
-
         pageViewModel.initDatabase(requireActivity().applicationContext)
 
-        val screenWidth = resources.configuration.screenWidthDp
-        Log.d(TAG, screenWidth.toString())
-
         val adapter = pageViewModel.pictures.value?.let {
-            ImageListRecyclerAdapter(it, screenWidth, this::likeImage)
-        } ?: ImageListRecyclerAdapter(emptyList(), screenWidth, this::likeImage)
+            ImagesListRecyclerAdapter(it, this::likeImage)
+        } ?: ImagesListRecyclerAdapter(emptyList(), this::likeImage)
         binding.recyclerView.adapter = adapter
 
         pageViewModel.pictures.observe(viewLifecycleOwner) {
             Log.d(TAG, "Updating list")
-            (binding.recyclerView.adapter as ImageListRecyclerAdapter).updateItems(it)
+            (binding.recyclerView.adapter as ImagesListRecyclerAdapter).updateItems(it)
         }
 
+        pageViewModel.likedPictures.observe(viewLifecycleOwner) {
+            pageViewModel.pictures.value?.forEachIndexed{ pos, img ->
+                if (img.liked && !(pageViewModel.likedPictures.value?.contains(img.id))!!)
+                    (binding.recyclerView.adapter as ImagesListRecyclerAdapter).notifyItemChanged(pos)
+            }
+        }
 
         return root
     }
@@ -99,20 +85,18 @@ class PlaceholderFragment : Fragment() {
         _binding = null
     }
 
-    private inline fun getImage(id: Int): File = File(activity?.filesDir, "$id$JPG")
-
     private fun likeImage(img: Photo, d: Drawable) {
         if (img.liked) {
             activity?.filesDir?.let {
-                pageViewModel.writeImage(d.toBitmap(), img.id, it)
-                pageViewModel.insertIntoDB(img)
+                pageViewModel.likeImage(d.toBitmap(), img, it)
             }
         }
         else {
-            activity?.filesDir?.let {
-                pageViewModel.deleteFromDB(img.id)
-                pageViewModel.deleteFile(getImage(img.id), requireActivity().applicationContext)
-            }
+            pageViewModel.removeLike(
+                img.id,
+                Helpers.getImage(requireActivity().filesDir, img.id),
+                requireActivity().applicationContext
+            )
         }
     }
 }
