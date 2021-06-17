@@ -1,4 +1,4 @@
-package com.vladislav.magentatest
+package com.vladislav.magentatest.other
 
 import com.vladislav.magentatest.ui.main.MainActivity
 import java.io.File

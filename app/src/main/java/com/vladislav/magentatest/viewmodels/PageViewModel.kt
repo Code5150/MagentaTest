@@ -4,11 +4,11 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.lifecycle.*
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
 import com.vladislav.magentatest.data.Photo
-import com.vladislav.magentatest.db.PhotoDB
-import com.vladislav.magentatest.db.PhotoEntity
-import com.vladislav.magentatest.network.ApiInterface
-import com.vladislav.magentatest.ui.fragments.PlaceholderFragment
+import com.vladislav.magentatest.repository.ImageRepository
 import com.vladislav.magentatest.ui.main.MainActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,47 +16,27 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-typealias PhotoList = List<Photo>
-
-//TODO: список лайкнутых отдельно
 class PageViewModel : ViewModel() {
 
     private val TAG = "PageViewModel"
 
-    private val apiService = ApiInterface()
-
-    private lateinit var database: PhotoDB
-
-    fun initDatabase(context: Context) {
-        database = PhotoDB.getPhotoDB(context)!!
-    }
-
-    private var page = 1
-
-    private val _pictures = liveData(Dispatchers.IO) {
-        //TODO: Проверка на существование записей в бд и соотв. отметка их как лайкнутые
-        var existingImages: List<Int>
-        withContext(Dispatchers.IO) {
-            existingImages = database.photoDao().selectAllIds()
-        }
-        val loadedImages = apiService.getImagesPage(page).map { Photo(it) }
-        loadedImages.forEach { if (it.id in existingImages) it.liked = true }
-        emit(loadedImages)
-    } as MutableLiveData
-    public val pictures = _pictures as LiveData<PhotoList>
+    private var _pld: MutableLiveData<PagingData<Photo>>
+    var pld: LiveData<PagingData<Photo>>
+        private set
 
     private val _likedPictures = liveData(Dispatchers.IO) {
-        emit(database.photoDao().selectAllIds())
+        emit(ImageRepository.loadSavedImages())
     } as MutableLiveData
-    public val likedPictures = _likedPictures as LiveData<List<Int>>
+    val likedPictures = _likedPictures as LiveData<List<Int>>
 
-    fun loadMore() {
-        page++
-        viewModelScope.launch(Dispatchers.IO) {
-            _pictures.value = _pictures.value?.plus(
-                apiService.getImagesPage(page).map { Photo(it) }
-            )
-        }
+    init {
+        _pld = ImageRepository.imagesLiveData()
+            .map { data -> data.map { p -> likedPictures.value?.let {
+                Photo(p).apply {
+                    if(id in it) this.liked = true }
+            } ?: Photo(p)} }
+            .cachedIn(viewModelScope) as MutableLiveData
+        pld = toLiveData(_pld)
     }
 
     private fun writeImage(bmp: Bitmap, id: Int, dir: File) {
@@ -77,12 +57,12 @@ class PageViewModel : ViewModel() {
     }
 
     private fun insertIntoDB(photo: Photo) {
-        database.photoDao().insert(PhotoEntity(photo.id, photo.width, photo.height))
+        ImageRepository.insertPhoto(photo)
         Log.d(TAG, "image info inserted")
     }
 
     private fun deleteFromDB(id: Int) {
-        database.photoDao().deleteById(id)
+        ImageRepository.deletePhotoById(id)
         Log.d(TAG, "image info deleted")
     }
 
@@ -91,7 +71,7 @@ class PageViewModel : ViewModel() {
             writeImage(bmp, photo.id, dir)
             insertIntoDB(photo)
             withContext(Dispatchers.Main) {
-                _likedPictures.value = _likedPictures.value!! + photo.id
+                _likedPictures.value = _likedPictures.value?.plus(photo.id)
             }
             Log.d(TAG, _likedPictures.value!!.joinToString())
         }
@@ -101,14 +81,20 @@ class PageViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             deleteFromDB(id)
             deleteFile(file, context)
-            _pictures.value!!.find { it.id == id }.apply {
+            /*_pictures.value!!.find { it.id == id }.apply {
                 this?.liked = false
-            }
+            }*/
             withContext(Dispatchers.Main) {
+                _pld.value = pld.value?.map { data -> when(data.id == id) {
+                    true -> data.apply { this.liked = false }
+                    false -> data
+                } }
                 _likedPictures.value = _likedPictures.value!!.filter { it != id }
             }
             Log.d(TAG, _likedPictures.value!!.joinToString())
         }
     }
+
+    private inline fun<T> toLiveData(mld: MutableLiveData<T>) = mld as LiveData<T>
 }
 

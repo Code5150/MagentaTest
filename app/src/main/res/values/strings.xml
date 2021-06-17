@@ -2,6 +2,8 @@
     <string name="app_name">Magenta Test App</string>
     <string name="tab_text_1">Pictures</string>
     <string name="tab_text_2">Favourites</string>
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="connection_lost">Connection Lost</string>
+    <string name="loading">Loading…</string>
+    <string name="like_button">Like</string>
+    <string name="image_desc">Image from Picsum</string>
 </resources>

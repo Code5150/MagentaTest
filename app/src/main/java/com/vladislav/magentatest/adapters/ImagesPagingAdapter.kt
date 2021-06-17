@@ -3,7 +3,6 @@ package com.vladislav.magentatest.adapters
 import android.animation.LayoutTransition
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -11,27 +10,24 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.recyclerview.widget.DiffUtil
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.request.CachePolicy
 import coil.size.Scale
-import com.vladislav.magentatest.Builders
 import com.vladislav.magentatest.R
 import com.vladislav.magentatest.data.Photo
-import com.vladislav.magentatest.network.ApiInterface
-import com.vladislav.magentatest.viewmodels.PhotoList
-import java.io.File
+import com.vladislav.magentatest.network.ApiService
+import com.vladislav.magentatest.other.PhotoCallback
 
-class ImagesListRecyclerAdapter(
-    private var items: PhotoList,
+class ImagesPagingAdapter(
+    diffCallback: PhotoCallback,
     private val onClickFun: (Photo, Drawable) -> Unit
-) : RecyclerView.Adapter<ImagesListRecyclerAdapter.ImageViewHolder>() {
+): PagingDataAdapter<Photo, ImagesPagingAdapter.ImageViewHolder>(diffCallback) {
 
     inner class ImageViewHolder(v: View) : RecyclerView.ViewHolder(v), View.OnClickListener {
 
         val imageView: ImageView = v.findViewById(R.id.image_view)
-        val card: CardView = v.findViewById(R.id.card)
         val likeButton: ImageButton = v.findViewById(R.id.like_button)
         private val imageLayout: ConstraintLayout = v.findViewById(R.id.image_layout)
 
@@ -46,9 +42,11 @@ class ImagesListRecyclerAdapter(
         }
 
         override fun onClick(v: View?) {
-            items[itemPosition].liked = !items[itemPosition].liked
-            likeButton.visibility = changeLikeVisibility(itemPosition)
-            onClickFun(items[itemPosition], imageView.drawable)
+            peek(itemPosition)?.let {
+                it.liked = !it.liked
+                likeButton.visibility = changeLikeVisibility(itemPosition)
+                onClickFun(it, imageView.drawable)
+            }
         }
     }
 
@@ -64,8 +62,10 @@ class ImagesListRecyclerAdapter(
         holder.likeButton.visibility = changeLikeVisibility(position)
         holder.imageView.load(
             createImageUrl(
-                items[position].id, items[position].width/4, items[position].height/4
-            ) /*items[position].downloadUrl*/, Builders.imageLoader
+                getItem(position)!!.id,
+                getItem(position)!!.width/4,
+                getItem(position)!!.height/4
+            )
         ) {
             crossfade(true)
             placeholder(R.drawable.placeholder_24)
@@ -74,44 +74,19 @@ class ImagesListRecyclerAdapter(
             listener { req, metadata ->
                 memoryCacheKey(metadata.memoryCacheKey)
                 scale(Scale.FIT)
-                holder.likeButton.visibility = changeLikeVisibility(position)
+                //holder.likeButton.visibility = changeLikeVisibility(position)
             }
         }
     }
 
-    override fun getItemCount(): Int = items.size
-
-    fun updateItems(newItems: PhotoList) {
-        val diffResult = DiffUtil.calculateDiff(
-            ItemDiffCallback(items, newItems)
-        )
-        items = newItems
-        diffResult.dispatchUpdatesTo(this)
-    }
-
-    inner class ItemDiffCallback(
-        private val oldList: PhotoList,
-        private val newList: PhotoList
-    ) : DiffUtil.Callback() {
-        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            return oldList[oldItemPosition] == newList[newItemPosition]
-        }
-
-        override fun getOldListSize(): Int = oldList.size
-
-        override fun getNewListSize(): Int = newList.size
-
-        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-            return oldList[oldItemPosition] == newList[newItemPosition]
-        }
-    }
-
     private inline fun createImageUrl(id: Int, width: Int, height: Int) =
-        ApiInterface.BASE_URL + ApiInterface.ID + "/" + id + "/" + width + "/" + height
+        ApiService.BASE_URL + ApiService.ID + "/" + id + "/" + width + "/" + height
 
     private inline fun changeLikeVisibility(pos: Int) =
-        when(items[pos].liked){
-            true -> View.VISIBLE
-            false -> View.GONE
-        }
+        peek(pos)?.let {
+            when(it.liked){
+                true -> View.VISIBLE
+                false -> View.GONE
+            }
+        } ?: View.GONE
 }

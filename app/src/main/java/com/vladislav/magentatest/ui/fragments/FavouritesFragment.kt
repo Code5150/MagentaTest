@@ -2,16 +2,14 @@ package com.vladislav.magentatest.ui.fragments
 
 import android.os.Bundle
 import android.util.Log
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import com.vladislav.magentatest.Helpers
-import com.vladislav.magentatest.adapters.ImagesListRecyclerAdapter
 import com.vladislav.magentatest.adapters.LikedImagesRecyclerAdapter
 import com.vladislav.magentatest.databinding.FragmentFavouritesBinding
-import com.vladislav.magentatest.databinding.FragmentMainBinding
+import com.vladislav.magentatest.other.Helpers
 import com.vladislav.magentatest.viewmodels.PageViewModel
 
 
@@ -41,7 +39,7 @@ class FavouritesFragment : Fragment() {
 
         val adapter =
             LikedImagesRecyclerAdapter(
-                pageViewModel.likedPictures.value!!,
+                pageViewModel.likedPictures.value,
                 this::dislikeImage,
                 requireActivity().filesDir
             )

@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
-import com.vladislav.magentatest.db.PhotoEntity
+import com.vladislav.magentatest.db.entities.PhotoEntity
 
 @Dao
 interface PhotoDAO {

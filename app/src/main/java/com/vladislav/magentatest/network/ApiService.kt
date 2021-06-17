@@ -1,14 +1,12 @@
 package com.vladislav.magentatest.network
 
 import com.vladislav.magentatest.network.data.PhotoInfoDTO
-import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import retrofit2.http.Query
-import kotlin.properties.Delegates
 
-interface ApiInterface {
+interface ApiService {
 
     @GET("v2/list")
     suspend fun getImagesPage(@Query("page") page: Int): List<PhotoInfoDTO>
@@ -22,8 +20,8 @@ interface ApiInterface {
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(ApiInterface::class.java)
+            .create(ApiService::class.java)
 
-        operator fun invoke(): ApiInterface = interfaceInstance
+        operator fun invoke(): ApiService = interfaceInstance
     }
 }

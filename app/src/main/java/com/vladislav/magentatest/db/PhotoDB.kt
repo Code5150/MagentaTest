@@ -5,6 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import com.vladislav.magentatest.db.dao.PhotoDAO
+import com.vladislav.magentatest.db.entities.PhotoEntity
 
 @Database(entities = [PhotoEntity::class], version = 1)
 abstract class PhotoDB: RoomDatabase() {

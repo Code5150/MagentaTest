@@ -3,4 +3,8 @@
     <string name="app_name">Задание Magenta</string>
     <string name="tab_text_1">Картинки</string>
     <string name="tab_text_2">Понравившиеся</string>
+    <string name="connection_lost">Ошибка загрузки</string>
+    <string name="loading">Загрузка…</string>
+    <string name="like_button">Лайк</string>
+    <string name="image_desc">Картинка с Picsum</string>
 </resources>

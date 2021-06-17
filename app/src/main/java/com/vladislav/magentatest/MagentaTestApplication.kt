@@ -3,17 +3,15 @@ package com.vladislav.magentatest
 import android.app.Application
 import coil.ImageLoader
 import coil.ImageLoaderFactory
-import coil.imageLoader
-import coil.request.ImageRequest
 import coil.util.CoilUtils
+import com.vladislav.magentatest.repository.ImageRepository
 import okhttp3.OkHttpClient
 
 class MagentaTestApplication : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
-        Builders.imageRequestBuilder = ImageRequest.Builder(applicationContext)
-        Builders.imageLoader = imageLoader
+        ImageRepository.initDatabase(applicationContext)
     }
 
     override fun newImageLoader(): ImageLoader {

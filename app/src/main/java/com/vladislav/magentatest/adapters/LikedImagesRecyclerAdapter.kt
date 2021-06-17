@@ -2,27 +2,23 @@ package com.vladislav.magentatest.adapters
 
 import android.animation.LayoutTransition
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
-import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import coil.load
 import coil.request.CachePolicy
 import coil.size.Scale
-import com.vladislav.magentatest.Builders
-import com.vladislav.magentatest.Helpers
+import com.vladislav.magentatest.other.Helpers
 import com.vladislav.magentatest.R
-import com.vladislav.magentatest.data.Photo
 import java.io.File
 
 class LikedImagesRecyclerAdapter(
-    private var items: List<Int>,
+    private var items: List<Int>?,
     private val onClickFun: (Int) -> Unit,
     private val filesDir: File
 ) : RecyclerView.Adapter<LikedImagesRecyclerAdapter.ImageViewHolder>() {
@@ -30,11 +26,10 @@ class LikedImagesRecyclerAdapter(
     inner class ImageViewHolder(v: View) : RecyclerView.ViewHolder(v), View.OnClickListener {
 
         val imageView: ImageView = v.findViewById(R.id.image_view)
-        val card: CardView = v.findViewById(R.id.card)
         val likeButton: ImageButton = v.findViewById(R.id.like_button)
         private val imageLayout: ConstraintLayout = v.findViewById(R.id.image_layout)
 
-        var itemPosition: Int = 0
+        var item: Int = 0
 
         init {
             v.setOnClickListener(this)
@@ -46,7 +41,7 @@ class LikedImagesRecyclerAdapter(
 
         override fun onClick(v: View?) {
             likeButton.visibility = View.GONE
-            onClickFun(items[itemPosition])
+            onClickFun(item)
         }
     }
 
@@ -58,10 +53,10 @@ class LikedImagesRecyclerAdapter(
         )
 
     override fun onBindViewHolder(holder: ImageViewHolder, position: Int) {
-        holder.itemPosition = position
+        holder.item = items!![position]
         holder.likeButton.visibility = View.VISIBLE
         holder.imageView.load(
-            Helpers.getImage(filesDir, items[position]), Builders.imageLoader
+            Helpers.getImage(filesDir, items!![position])
         ) {
             crossfade(true)
             placeholder(R.drawable.placeholder_24)
@@ -75,8 +70,12 @@ class LikedImagesRecyclerAdapter(
     }
 
     fun updateItems(newItems: List<Int>) {
-        val diffResult = DiffUtil.calculateDiff(
-            ItemDiffCallback(items, newItems)
+        val diffResult = items?.let {
+            DiffUtil.calculateDiff(
+                ItemDiffCallback(it, newItems)
+            )
+        } ?:  DiffUtil.calculateDiff(
+            ItemDiffCallback(emptyList(), newItems)
         )
         items = newItems
         diffResult.dispatchUpdatesTo(this)
@@ -99,5 +98,5 @@ class LikedImagesRecyclerAdapter(
         }
     }
 
-    override fun getItemCount(): Int = items.size
+    override fun getItemCount(): Int = items?.size ?: 0
 }
