@@ -91,24 +91,12 @@ class ImagesFragment : Fragment() {
     }
 
     companion object {
-        /**
-         * The fragment argument representing the section number for this
-         * fragment.
-         */
-        private const val TAG = "All Fragment"
-        private const val ARG_SECTION_NUMBER = "section_number"
 
-        /**
-         * Returns a new instance of this fragment for the given section
-         * number.
-         */
+        private const val TAG = "All Fragment"
+
         @JvmStatic
-        fun newInstance(sectionNumber: Int): ImagesFragment {
-            return ImagesFragment().apply {
-                arguments = Bundle().apply {
-                    putInt(ARG_SECTION_NUMBER, sectionNumber)
-                }
-            }
+        fun newInstance(): ImagesFragment {
+            return ImagesFragment()
         }
     }
 

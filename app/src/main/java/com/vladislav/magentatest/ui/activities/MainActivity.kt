@@ -1,4 +1,4 @@
-package com.vladislav.magentatest.ui.main
+package com.vladislav.magentatest.ui.activities
 
 import android.os.Bundle
 import android.util.Log

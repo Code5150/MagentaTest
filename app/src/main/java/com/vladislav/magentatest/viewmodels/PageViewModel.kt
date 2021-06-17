@@ -9,7 +9,7 @@ import androidx.paging.cachedIn
 import androidx.paging.map
 import com.vladislav.magentatest.data.Photo
 import com.vladislav.magentatest.repository.ImageRepository
-import com.vladislav.magentatest.ui.main.MainActivity
+import com.vladislav.magentatest.ui.activities.MainActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,7 +43,6 @@ class PageViewModel : ViewModel() {
         val imgFile = File(dir, "$id${MainActivity.JPG}")
         with(FileOutputStream(imgFile)) {
             bmp.compress(Bitmap.CompressFormat.JPEG, 100, this)
-            Log.d(TAG, "image written")
             this.close()
         }
     }
@@ -53,17 +52,14 @@ class PageViewModel : ViewModel() {
         if (file.exists()) {
             context.deleteFile(file.name)
         }
-        Log.d(TAG, "file deleted")
     }
 
     private fun insertIntoDB(photo: Photo) {
         ImageRepository.insertPhoto(photo)
-        Log.d(TAG, "image info inserted")
     }
 
     private fun deleteFromDB(id: Int) {
         ImageRepository.deletePhotoById(id)
-        Log.d(TAG, "image info deleted")
     }
 
     fun likeImage(bmp: Bitmap, photo: Photo, dir: File) {
@@ -73,7 +69,6 @@ class PageViewModel : ViewModel() {
             withContext(Dispatchers.Main) {
                 _likedPictures.value = _likedPictures.value?.plus(photo.id)
             }
-            Log.d(TAG, _likedPictures.value!!.joinToString())
         }
     }
 
@@ -81,9 +76,6 @@ class PageViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             deleteFromDB(id)
             deleteFile(file, context)
-            /*_pictures.value!!.find { it.id == id }.apply {
-                this?.liked = false
-            }*/
             withContext(Dispatchers.Main) {
                 _pld.value = pld.value?.map { data -> when(data.id == id) {
                     true -> data.apply { this.liked = false }
@@ -91,7 +83,6 @@ class PageViewModel : ViewModel() {
                 } }
                 _likedPictures.value = _likedPictures.value!!.filter { it != id }
             }
-            Log.d(TAG, _likedPictures.value!!.joinToString())
         }
     }
 

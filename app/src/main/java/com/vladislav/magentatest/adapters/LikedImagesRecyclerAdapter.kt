@@ -62,7 +62,7 @@ class LikedImagesRecyclerAdapter(
             placeholder(R.drawable.placeholder_24)
             memoryCachePolicy(CachePolicy.ENABLED)
             bitmapConfig(Bitmap.Config.ARGB_8888)
-            listener { req, metadata ->
+            listener { _, metadata ->
                 memoryCacheKey(metadata.memoryCacheKey)
                 scale(Scale.FIT)
             }

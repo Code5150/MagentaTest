@@ -19,8 +19,8 @@ class SectionsPagerAdapter(
 
     override fun createFragment(position: Int): Fragment =
         when(tabs[position]) {
-            FragmentTypes.ALL -> ImagesFragment.newInstance(position + 1)
-            FragmentTypes.LIKED -> FavouritesFragment.newInstance(position + 1)
+            FragmentTypes.ALL -> ImagesFragment.newInstance()
+            FragmentTypes.LIKED -> FavouritesFragment.newInstance()
         }
 
     override fun getItemCount(): Int = tabs.size
